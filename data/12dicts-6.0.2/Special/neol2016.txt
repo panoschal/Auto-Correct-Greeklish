@@ -1,0 +1,522 @@
+abductee
+    abductees
+anime
+    animes%
+app
+    apps
+backslash
+    backslashes
+barbacoa
+    barbacoas%
+barista
+    baristas
+birther
+    birthers
+bitcoin
+    bitcoins
+bling
+   blings%
+blog
+    blogged, blogging, blogs
+blogger
+    bloggers
+broadband
+    broadbands%
+buckyball
+    buckyballs
+burka
+    burkas, burqa, burqas
+buzzkill
+    buzzkills
+carbs
+cardio
+    cardios%
+cashback
+    cashbacks%
+ciabatta
+    ciabattas
+clit
+    clits
+colonoscopy
+    colonoscopies
+cosplay
+    cosplays%
+crowdfund
+    crowdfunded, crowdfunding, crowdfunds
+crowdfunding
+    crowdfundings%
+cyberbully
+    cyberbullies
+cybersex
+    cybersexes%
+deleverage
+    deleveraged, deleverages, deleveraging
+detainee
+    detainees
+dotcom
+    dotcoms
+earbud
+    earbuds
+ecotourism
+    ecotourisms%
+edamame
+eldercare
+    eldercares%
+electronica
+    electronicas%
+emo
+    emos
+emoji
+    emojis
+exoplanet
+    exoplanets
+fanboy
+    fanboys
+fashionista
+    fashionistas
+frack
+    fracked, fracking, fracks
+fracking
+    frackings%
+geocache
+    geocached, geocaches, geocaching
+geoengineering
+    geoengineerings%
+globalization
+    globalisation, globalisations%, globalizations%
+google
+    googled, googles, googling
+hacktivist
+    hacktivists
+handheld
+    handhelds
+hashtag
+    hashtags
+hazmat
+    hazmats%
+helpline
+    helplines
+hoodie
+    hoodies
+hummus
+    houmous, houmouses%, houmus, houmuses%, hummuses%, humus -> [humus], humuses%
+hyperlink
+    hyperlinked, hyperlinking, hyperlinks
+inbox
+    inboxes
+intranet
+    intranets
+jihadist
+    jihadists
+landline
+    landlines
+latte
+    lattes
+locavore
+    locavores
+login
+    logins
+logoff
+    logoffs
+logon
+    logons
+logout
+    logouts
+lolcat
+    lolcats
+loonie
+    loonies -> [loony]
+madrassa
+    madrasa, madrasah, madrasahs, madrasas, madrassas
+malware
+    malwares%
+manga
+    mangas%
+mashup
+    mashups
+megachurch
+    megachurches
+meh
+meme
+    memes
+microaggression
+    microaggressions
+microloan
+    microloans
+milf
+    milfs
+mkay
+monetize
+    monetise, monetised, monetises, monetising, monetized, monetizes, monetizing
+muggle
+    muggles
+multiplayer
+multiverse
+    multiverses
+nanotechnology
+    nanotechnologies%
+neocon
+    neocons
+neoconservative
+    neoconservatives
+netbook
+    netbooks
+nigga
+    niggas, niggaz
+offload
+    offloaded, offloading, offloads
+offshoring
+    offshorings%
+orc
+    orcs
+overshare
+    overshared, overshares, oversharing
+overthink
+    overthinking, overthinks, overthought
+paragliding
+    paraglidings%
+parasailing
+    parasailings%
+parkour
+    parkours%
+paywall
+    paywalls
+pecs
+phishing
+    phishings%
+picante
+plastique
+    plastiques%
+playlist
+    playlists
+podcast
+    podcasting, podcasts
+polyamory
+    polyamories%
+prenup
+    prenups
+pwn
+    pwned, pwning, pwns
+quesadilla
+    quesadillas
+remortgage
+    remortgaged, remortgages, remortgaging
+reorg
+    reorged, reorging, reorgs
+retweet
+    retweeted, retweeting, retweets
+ringtone
+    ringtones
+robocall
+    robocalled, robocalling, robocalls
+rugrat
+    rugrats
+sampling -> [sample]
+    samplings
+satay
+    satays%
+scrunchie
+    scrunchies
+selfie
+    selfies
+selloff
+    selloffs
+semiotics
+semiretired
+sexting
+    sextings%
+sharia
+    shariah, shariahs%, sharias%
+shiitake
+    shiitakes
+shopaholic
+    shopaholics
+sim
+    sims
+simpatico
+simulcast
+    simulcasted, simulcasting, simulcasts
+slideshow
+    slideshows
+slumdog
+    slumdogs
+smartwatch
+    smartwatches
+smoothie
+    smoothies
+snarky
+    snarkier, snarkiest
+snowblower
+    snowblowers
+soulmate
+    soulmates
+spam
+    spammed, spamming, spams
+spammer
+    spammers
+spellcheck
+    spellchecked, spellchecking, spellchecks
+spellchecker
+    spellcheckers
+spyware
+    spywares%
+sriracha
+    srirachas%
+startup
+    startups
+stent
+    stents
+stoner
+    stoners
+subprime
+supermodel
+    supermodels
+supersize
+    supersized, supersizes, supersizing
+taser
+    tasered, tasering, tasers
+tealight
+    tealights
+techno
+    technos%
+terabyte
+    terabytes
+trifecta
+    trifectas
+truther
+    truthers
+truthiness
+    truthinesses%
+turducken
+    turduckens
+twerk
+    twerked, twerking, twerks
+unfriend
+    unfriended, unfriending, unfriends
+uninstall
+    uninstalled, uninstalling, uninstalls
+unsubscribe
+    unsubscribed, unsubscribes, unsubscribing
+username
+    usernames
+vape
+    vaped, vapes, vaping
+voicemail
+    voicemails
+vuvuzela
+    vuvuzelas
+wack
+    wacker, wackest, wacks
+waterboard
+    waterboarded, waterboarding, waterboards
+waterboarding
+    waterboardings
+webcam
+    webcams
+webcast
+    webcasting, webcasts
+webinar
+    webinars
+webisode
+    webisodes
+webmaster
+    webmasters
+widescreen
+    widescreens
+wiki
+    wikis
+wingnut
+    wingnuts
+zapper
+    zappers
+
+friend
+    friended, friending
+jailbreak
+    jailbreaking, jailbroke, jailbroken
+millennial
+    millennials
+text
+    texted, texting
+
+acid reflux
+air quotes
+al-Qaeda
+Anthropocene
+anti-vaxxer
+Asiago
+assisted living
+asymmetric warfare
+BFF
+binge-watch
+bird flu
+black box
+bling-bling
+Blu-Ray
+body piercing
+bok choy
+booty call
+Botox
+break-dance
+break-dancer
+break-dancing
+bucket list
+butt dial
+caller ID
+call waiting
+carbon footprint
+cargo pants
+chat room
+civil union
+clip art
+closed-captioned
+cloud computing
+control freak
+convection oven
+crash diet
+dark energy
+dark matter
+data mining
+DHS
+dialog box
+digital camera
+dim sum
+dirty bomb
+DMCA
+double-click
+drama queen
+DVR
+e-cig
+e-cigarette
+e-commerce
+end product
+ethnic cleansing
+exit strategy
+Facebook
+FAQ
+f-bomb
+feng shui
+flash mob
+flight recorder
+gender identity
+gluten-free
+GMO
+GPS
+greenhouse gas
+ground zero
+guest worker
+gut-wrenching
+hard-wired
+HDTV
+hedge fund
+help desk
+home fries
+home invasion
+Homeland Security
+HTML
+hybrid car
+identity theft
+IED
+insider trading
+Instagram
+instant message
+intelligent design
+Internet cafe
+iPad
+iPhone
+IPO
+iPod
+ISIS
+Islamist
+ISP
+IVF
+jet ski
+jet skiing
+lap dance
+LGBT
+live-in
+low-carb
+market share
+medical marijuana
+memory stick
+model home
+MOOC
+MP3
+MP3 player
+net neutrality
+NSFW
+Obamacare
+open-plan
+par-per-view
+peak oil
+perfect storm
+personal trainer
+plug-in
+pop culture
+pop-up
+prenuptial agreement
+privacy policy
+pro bono
+Prozac
+pump and dump
+Rasta
+Rastafarian
+Rastafarianism
+RDA
+reality TV
+refried beans
+restraining order
+road rage
+road trip
+same-sex
+SARS
+satellite radio
+screen saver
+search engine
+senior moment
+sex worker
+shock jock
+SIDS
+SJW
+sky marshal
+smart bomb
+snake oil
+soccer mom
+social media
+social networking
+sock puppet
+special needs
+speed date
+speed dial
+spring roll
+squeaky clean
+starter home
+stem cell
+stretch limo
+strip search
+Sudoku
+suicide bomber
+suicide bombing
+SUV
+tailgate party
+talk radio
+TARP
+Tea Party
+Tex-Mex
+text message
+top-of-the-line
+toxic asset
+trans fat
+Twitter
+urban myth
+Viagra
+VoIP
+wardrobe malfunction
+weapon of mass destruction
+Wi-Fi
+Wikileaks
+Wikipedia
+wine cooler
+win-win
+WMD
+Ziploc bag
