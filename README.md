@@ -1,14 +1,14 @@
 # Autocorrect
 
-Autocorrect for your PC with Python
+Autocorrect for your PC with Python, for optimizing writing speed and using less keystrokes.
 
 # Things I used
 
-- pynput για τον έλεγχο του πληκτρολογίου
-- Hunspell για την διαχείριση του λεξικού (κάτι που χρησιμοποιείται σε πολλά δημοφιλή προγράμματα όπως Google Chrome, LibreOffice) και https://github.com/MSeal/cython_hunspell
-- 10000 πιο συχνές λέξεις από το Google's Trillion Word Corpus, όπως επεξεργάστηκαν σε αυτό το repo: https://github.com/first20hours/google-10000-english
-- 12dicts: http://wordlist.aspell.net/12dicts/
-- Chromium dictionaries
+- [Pynput](https://github.com/moses-palmer/pynput/) για τον έλεγχο του πληκτρολογίου
+- [Hunspell](http://hunspell.github.io/) για την διαχείριση του λεξικού και την αναζήτηση suggestions (κάτι που χρησιμοποιείται σε πολλά δημοφιλή προγράμματα όπως Google Chrome, Firefox, LibreOffice, OpenOffice) και [αυτό](https://github.com/MSeal/cython_hunspell)
+- 10000 πιο συχνές λέξεις από το Google's Trillion Word Corpus, όπως επεξεργάστηκαν σε [αυτό το repo](https://github.com/first20hours/google-10000-english)
+- [12dicts](http://wordlist.aspell.net/12dicts/)
+- [Chromium dictionaries](https://chromium.googlesource.com/chromium/deps/hunspell_dictionaries/)
 
 # Features
 
@@ -36,7 +36,8 @@ python3 script.py
 ```
 
 - Press Escape to stop it
-  Το πιθανότερο είναι να δουλεύει σε όλα τα OS.
+
+Το πιθανότερο είναι να δουλεύει σε όλα τα OS.
 
 # Επικοινωνία
 
