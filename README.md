@@ -2,6 +2,8 @@
 
 Autocorrect for your PC with Python, for optimizing writing speed and using less keystrokes.
 
+![gif demonstration](demonstration.gif)
+
 # Things I used
 
 - [Pynput](https://github.com/moses-palmer/pynput/) για τον έλεγχο του πληκτρολογίου
