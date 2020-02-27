@@ -138,7 +138,7 @@ def spellcheck(last_line, ending_char):
 
     common = {'toy': 'του', 'den': 'δεν',
               'myo': 'μου', 'alla': 'αλλα', 'ta': 'τα', 'soy': 'σου', 'ti': 'τι'}
-    common_ambiguity = {'me': 'με', 'to': 'το'}
+    common_ambiguity = {'me': 'με', 'to': 'το', 'an': 'αν'}
     if last_line in common:
         suggestion = common[last_line]
         previous_word_lang = find_language(suggestion)
@@ -200,7 +200,7 @@ def on_press(key):
             if key in [keyboard.Key.left, keyboard.Key.right, keyboard.Key.up, keyboard.Key.down, keyboard.KeyCode.from_char('@'), keyboard.KeyCode.from_char('#')]:
                 cancel = True
                 current_word = ''
-            if key in [keyboard.Key.space, keyboard.Key.enter, keyboard.KeyCode.from_char('.'), keyboard.KeyCode.from_char(','), keyboard.KeyCode.from_char(')'), keyboard.KeyCode.from_char('-'), keyboard.KeyCode.from_char(':'), keyboard.KeyCode.from_char('!'), keyboard.KeyCode.from_char('"'), keyboard.KeyCode.from_char(']')]:
+            if key in [keyboard.Key.space, keyboard.KeyCode.from_char('.'), keyboard.KeyCode.from_char(','), keyboard.KeyCode.from_char(')'), keyboard.KeyCode.from_char('-'), keyboard.KeyCode.from_char(':'), keyboard.KeyCode.from_char('!'), keyboard.KeyCode.from_char('"'), keyboard.KeyCode.from_char(']')]:
                 deafen_listener = True
                 start = time()
                 spellcheck(current_word, ending_char=key)
@@ -250,3 +250,7 @@ except KeyError as err:
 # @TODO να κάνει και πολλές λέξεις μαζί. πχ καιαυτό -> και αυτό. κα ιαυτό -> και αυτό.
 # @TODO να βελτιώσω την ταχύτητα. να ακυρώνεται η διόρθωση αν προλάβεις να αρχίσεις την επόμενη λέξη. ή να διορθώνονται πολλές λέξεις μαζί.
 # @TODO greek by frequency, sort, or by similarity
+# @TODO πιο γρήγορο
+# @TODO να βάζει την τελεία πριν το κεν΄΄ο
+# @TODO shortcut για να εισάγεις λέξη στο λεξικό.
+# @TODO όταν περν΄΄αει αρκετή ΄΄ωρα, να ακυρ΄΄ωνεται.
