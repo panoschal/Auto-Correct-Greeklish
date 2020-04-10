@@ -13,14 +13,13 @@ controller = keyboard.Controller()
 cancel = False
 current_word = ''
 deafen_listener = False
-previous_word_lang = 'en'
+language_of_previous_word = 'en'
 
 
 greek_letters = 'αβγδεζηθικλμνξοπρστυφχψωΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩς'
 greek_accented = 'άέήίϊΐόύϋΰώΆΈΉΊΌΎΏ'
 english_letters = 'abcdefghijklmnopqrstuvwxyz'
-english_accented = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-letters = greek_letters + greek_accented + english_letters + english_accented
+letters = greek_letters + greek_accented + english_letters + english_letters.upper()
 letters_extended = letters + ' ;'
 
 freq_en = []
@@ -48,7 +47,7 @@ def is_letter(key):
     return len(s) == 3 and s[0] == "'" and s[2] == "'" and str(key)[1] in letters_extended
 
 
-def push_to_action(last_line, suggestion, ending_char):
+def execute_replacement(last_line, suggestion, ending_char):
     global deafen_listener
     print(last_line + '->' + suggestion)
 
@@ -70,21 +69,16 @@ def push_to_action(last_line, suggestion, ending_char):
     controller.release(ending_char)
 
 
-def greek(word):
+def greek(word: str):
 
-    def transpose(letter):
-        dic = {en: el for en, el in zip(
-            "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM;", ";ςερτυθιοπασδφγηξκλζχψωβνμ:ΣΕΡΤΥΘΙΟΠΑΣΔΦΓΗΞΚΛΖΧΨΩΒΝΜ;")}
-        return dic[letter]
+    lookup_table = ''.maketrans("qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM;", ";ςερτυθιοπασδφγηξκλζχψωβνμ:ΣΕΡΤΥΘΙΟΠΑΣΔΦΓΗΞΚΛΖΧΨΩΒΝΜ;")
 
     def stress(letter):
         dic = {el: el_stressed for el, el_stressed in zip(
             "ευιοαηω", "έύίόάήώ")}
         return dic[letter]
 
-    gr = ""
-    for letter in word:
-        gr = gr + transpose(letter)
+    gr = word.translate(lookup_table)
     gr_stress = ""
     for i in range(len(gr)):
         if gr[i] == ';' and i + 1 < len(gr) and gr[i+1] in "ευιοαηω":
@@ -99,7 +93,7 @@ def greek(word):
 
 
 def spellcheck(last_line, ending_char):
-    global deafen_listener, previous_word_lang
+    global deafen_listener, language_of_previous_word
 
     def diff(original, suggestion):
         if len(suggestion) == 0:
@@ -141,19 +135,19 @@ def spellcheck(last_line, ending_char):
     common_ambiguity = {'me': 'με', 'to': 'το', 'an': 'αν'}
     if last_line in common:
         suggestion = common[last_line]
-        previous_word_lang = find_language(suggestion)
-        push_to_action(last_line, suggestion, ending_char=ending_char)
+        language_of_previous_word = find_language(suggestion)
+        execute_replacement(last_line, suggestion, ending_char=ending_char)
         return
-    if last_line in common_ambiguity and previous_word_lang == 'el':
+    if last_line in common_ambiguity and language_of_previous_word == 'el':
         suggestion = common_ambiguity[last_line]
-        previous_word_lang = find_language(suggestion)
-        push_to_action(last_line, suggestion, ending_char=ending_char)
+        language_of_previous_word = find_language(suggestion)
+        execute_replacement(last_line, suggestion, ending_char=ending_char)
         return
 
     en.suggest(last_line)
     isCorrect = en.spell(last_line)
     if isCorrect:
-        previous_word_lang = 'en'
+        language_of_previous_word = 'en'
         # print('is correct in english')
         return
     if (not isCorrect) and validate_word(last_line):
@@ -179,8 +173,8 @@ def spellcheck(last_line, ending_char):
 
         # @TODO να σου αλλάζει και την γλώσσα όταν κάνεις transliteration
         # @TODO mute listener όταν κάνω push ένα suggestion
-        previous_word_lang = find_language(suggestion)
-        push_to_action(last_line, suggestion, ending_char=ending_char)
+        language_of_previous_word = find_language(suggestion)
+        execute_replacement(last_line, suggestion, ending_char=ending_char)
 
 
 def on_press(key):
@@ -204,11 +198,11 @@ def on_press(key):
                 deafen_listener = True
                 start = time()
                 spellcheck(current_word, ending_char=key)
-                print(str(time() - start))
+                print('time:', str(time() - start))
                 deafen_listener = False
                 cancel = False
                 current_word = ''
-            if key in [keyboard.Key.space, keyboard.Key.enter, keyboard.Key.tab]:
+            if key in [keyboard.Key.enter, keyboard.Key.tab]:
                 cancel = False
                 current_word = ''
             if key in [keyboard.Key.backspace]:
@@ -221,6 +215,8 @@ def on_press(key):
             print('word: "', current_word, '"', sep='')
         except KeyboardInterrupt:
             raise SystemExit
+        except KeyError as e:
+            print(e)
 
 
 def on_click(x, y, button, pressed):
