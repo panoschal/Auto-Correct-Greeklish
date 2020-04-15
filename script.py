@@ -10,8 +10,6 @@ el = Hunspell('el_GR', hunspell_data_dir='./data/hunspell_dictionaries')
 
 controller = keyboard.Controller()
 
-cancel = False
-current_word = ''
 deafen_listener = False
 language_of_previous_word = 'en'
 
@@ -48,7 +46,7 @@ def is_letter(key):
 
 
 def execute_replacement(last_line, suggestion, ending_char):
-    global deafen_listener
+    global deafen_listener, cancel
     print(last_line + '->' + suggestion)
 
     if cancel:
@@ -93,7 +91,7 @@ def greek(word: str):
 
 
 def spellcheck(last_line, ending_char):
-    global deafen_listener, language_of_previous_word
+    global language_of_previous_word
 
     def diff(original, suggestion):
         if len(suggestion) == 0:
@@ -144,15 +142,15 @@ def spellcheck(last_line, ending_char):
         execute_replacement(last_line, suggestion, ending_char=ending_char)
         return
 
-    en.suggest(last_line)
     isCorrect = en.spell(last_line)
     if isCorrect:
         language_of_previous_word = 'en'
         # print('is correct in english')
         return
     if (not isCorrect) and validate_word(last_line):
-        suggestions_en = [word for word in en.suggest(
-            last_line) if word in freq_en and similar(last_line, word)]
+        suggestions_en = [word for word in en.suggest(last_line) 
+            if word in freq_en and similar(last_line, word)]
+
         if el.spell(greek(last_line)):
             suggestions_el = [greek(last_line)]
         else:
@@ -171,75 +169,144 @@ def spellcheck(last_line, ending_char):
             suggestion = closer_suggestion(
                 [(last_line, suggestion_en), (greek(last_line), suggestion_el)])
 
-        # @TODO να σου αλλάζει και την γλώσσα όταν κάνεις transliteration
-        # @TODO mute listener όταν κάνω push ένα suggestion
+        
         language_of_previous_word = find_language(suggestion)
         execute_replacement(last_line, suggestion, ending_char=ending_char)
 
+def keys_from_chars(string: str):
+    return [keyboard.KeyCode.from_char(char) for char in string]
 
 def on_press(key):
-    global cancel, current_word, deafen_listener  # , listener
-    if key == keyboard.Key.alt_gr:
-        return False
+    global deafen_listener
     if deafen_listener:
         print('deafen listener True')
     else:
-        try:
-            # detect_current_language()
-            # print(repr(key))
-            # @TODO ctrl+backspace bug
-            if cancel == False:
-                if is_letter(key):
-                    current_word = current_word + str(key)[1]
-            if key in [keyboard.Key.left, keyboard.Key.right, keyboard.Key.up, keyboard.Key.down, keyboard.KeyCode.from_char('@'), keyboard.KeyCode.from_char('#')]:
-                cancel = True
-                current_word = ''
-            if key in [keyboard.Key.space, keyboard.KeyCode.from_char('.'), keyboard.KeyCode.from_char(','), keyboard.KeyCode.from_char(')'), keyboard.KeyCode.from_char('-'), keyboard.KeyCode.from_char(':'), keyboard.KeyCode.from_char('!'), keyboard.KeyCode.from_char('"'), keyboard.KeyCode.from_char(']')]:
-                deafen_listener = True
-                start = time()
-                spellcheck(current_word, ending_char=key)
-                print('time:', str(time() - start))
-                deafen_listener = False
-                cancel = False
-                current_word = ''
-            if key in [keyboard.Key.enter, keyboard.Key.tab]:
-                cancel = False
-                current_word = ''
-            if key in [keyboard.Key.backspace]:
-                if current_word == '':  # πριν, πάτησα κενό, οπότε ακυρώνω για να γράψει ο χρήστης ότι θέλει
-                    cancel = True
-                    current_word = ''
-                else:
-                    cancel = False
-                    current_word = current_word[:-1]
-            print('word: "', current_word, '"', sep='')
-        except KeyboardInterrupt:
-            raise SystemExit
-        except KeyError as e:
-            print(e)
-
+        # detect_current_language()
+        
+        if key in [keyboard.Key.space, *keys_from_chars('.,)-:!"]')]:
+            ...
+            cancel = False
+            current_word = ''
+        
 
 def on_click(x, y, button, pressed):
     global cancel, current_word
     cancel = True
     current_word = ''
 
+from dataclasses import dataclass
+@dataclass
+class InputEvent:
+    device: str
+    key: keyboard.Key = None
 
-mouse_listener = mouse.Listener(on_click=on_click)
-mouse_listener.start()
+import rx
+from rx.subject import Subject
+from rx import operators as ops
 
-try:
-    with keyboard.Listener(on_press=on_press) as listener:
-        listener.join()
-except KeyError as err:
-    print('error', err)
-# try:
-#     while True:
-#         time.sleep(1)
-# except KeyboardInterrupt:
-#     listener.stop()
+class Manager:
 
-# later:
+    def on_click(self, x, y, button, pressed):
+        if pressed:
+            self.subject.on_next(InputEvent(device='mouse')) # send message to the subscribers
+
+    def on_press(self, key):
+        self.subject.on_next(InputEvent(device='keyboard', key=key))
+        if key == keyboard.Key.esc:
+            self.subject.on_completed()
+            raise SystemExit
+
+    def open(self):
+        self.subject = Subject()
+        self.input_stream = self.subject.subscribe()
+
+if __name__ == '__main__':
+    try:
+        manager = Manager() 
+        manager.open()
+
+
+        def calc_cancel(previous_event, event):
+            if event.key in [keyboard.Key.enter, keyboard.Key.tab]:
+                return False
+            if event.key in [keyboard.Key.backspace]:
+                if previous_event.key in [keyboard.Key.space, *keys_from_chars('.,)-:!"]')]:  # πριν, πάτησα κενό, οπότε ακυρώνω για να γράψει ο χρήστης ότι θέλει
+                    return True
+                else:
+                    return False
+            if event.key in [keyboard.Key.left, keyboard.Key.right, keyboard.Key.up, keyboard.Key.down, *keys_from_chars('@#')]:
+                return True
+
+            return False # base case
+
+        cancel = manager.subject.pipe(
+            ops.pairwise(),
+            ops.map(lambda pair_of_events: calc_cancel(*pair_of_events)),
+            ops.start_with(False)
+        )
+        
+        def keep_current_word(previous_word: str, t: tuple):
+            print(f'keep_current_word with {previous_word}, {t}')
+            event, cancel = t
+            if event.device == 'mouse':
+                return previous_word
+
+            if cancel == False:
+                if is_letter(event.key):
+                    return previous_word + str(event.key)[1]
+
+            if event.key in [keyboard.Key.enter, keyboard.Key.tab, keyboard.Key.left, keyboard.Key.right, keyboard.Key.up, keyboard.Key.down, *keys_from_chars('@#')]:
+                return ''
+            if event.key in [keyboard.Key.backspace]:
+                if previous_word == '': # πριν, πάτησα κενό, οπότε ακυρώνω για να γράψει ο χρήστης ότι θέλει
+                    return ''
+                else:
+                    return previous_word[:-1]
+            
+            return previous_word # nothing of the above
+        current_word = manager.subject.pipe(
+            ops.zip(cancel),
+            ops.do_action(lambda tup: print('int:', tup)),
+            ops.scan(keep_current_word, ''),
+            ops.do_action(lambda current_word: print(f'word: "{current_word}"'))
+        )
+    
+    
+ 
+        current_word.subscribe()
+        cancel.subscribe()
+
+
+        def wrap_spellcheck(event: InputEvent, current_word: str):
+            start = time()
+            # spellcheck(current_word, ending_char=event.key)
+            print('time to spellcheck:', str(time() - start))
+
+        spellcheck_event = manager.subject.pipe(
+            ops.filter(lambda event: event.key in [keyboard.Key.space, *keys_from_chars('.,)-:!"]')]),
+            ops.with_latest_from(current_word)
+            # ops.map(lambda event: (event.key, ))
+        ).subscribe(lambda tup: wrap_spellcheck(*tup))
+
+
+        # deafen_listener να σεταρίζεται στο execute_replacement
+        manager.subject.pipe(
+
+        )
+
+        mouse_listener = mouse.Listener(on_click=lambda x, y, button, pressed: manager.on_click(x, y, button, pressed))
+        mouse_listener.start()
+        with keyboard.Listener(on_press=lambda key: manager.on_press(key)) as listener:
+            try:
+                listener.join()
+            except KeyError as err: 
+                print('error', err)   
+
+    except KeyboardInterrupt:
+        raise SystemExit
+    except KeyError as e:
+        print(e)
+
 # @TODO add names, maybe from fb
 # @TODO στην αρχή του listener πρέπει να είσαι στα αγγλικά
 # @TODO να κάνει σωστά τα κεφαλαία-μικρά
@@ -250,3 +317,7 @@ except KeyError as err:
 # @TODO να βάζει την τελεία πριν το κεν΄΄ο
 # @TODO shortcut για να εισάγεις λέξη στο λεξικό.
 # @TODO όταν περν΄΄αει αρκετή ΄΄ωρα, να ακυρ΄΄ωνεται.
+# @TODO ctrl+backspace bug
+# @TODO να σου αλλάζει και την γλώσσα όταν κάνεις transliteration
+# @TODO mute listener όταν κάνω push ένα suggestion
+# ops.replay(buffer_size=1) # persist the last value
