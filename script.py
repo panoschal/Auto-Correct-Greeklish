@@ -10,7 +10,6 @@ el = Hunspell('el_GR', hunspell_data_dir='./data/hunspell_dictionaries')
 
 controller = keyboard.Controller()
 
-deafen_listener = False
 language_of_previous_word = 'en'
 
 
@@ -21,7 +20,7 @@ letters = greek_letters + greek_accented + english_letters + english_letters.upp
 letters_extended = letters + ' ;'
 
 freq_en = []
-with open('data/google_10000/google_sfw.txt', 'rt') as google:
+with open('data/google_10000/google_sfw.txt') as google:
     for word in google.readlines():
         freq_en.append(word[:-1])
 
@@ -46,12 +45,14 @@ def is_letter(key):
 
 
 def execute_replacement(last_line, suggestion, ending_char):
-    global deafen_listener, cancel
+    global cancel, manager
     print(last_line + '->' + suggestion)
 
     if cancel:
         print('cancel key pressed, I wont replace it')
         return
+
+    manager.active = False
     # controller.press(keyboard.Key.left)
     # controller.release(keyboard.Key.left)
     # controller.press(keyboard.Key.ctrl)
@@ -65,6 +66,7 @@ def execute_replacement(last_line, suggestion, ending_char):
     controller.type(suggestion)
     controller.press(ending_char)
     controller.release(ending_char)
+    manager.active = True
 
 
 def greek(word: str):
@@ -90,7 +92,7 @@ def greek(word: str):
 # @TODO some key combinations
 
 
-def spellcheck(last_line, ending_char):
+def spellcheck(last_line):
     global language_of_previous_word
 
     def diff(original, suggestion):
@@ -102,9 +104,9 @@ def spellcheck(last_line, ending_char):
                 count += 1
         return count / len(suggestion)
 
-    def closer_suggestion(list):
+    def closer_suggestion(my_list):
         out = [(diff(original, suggestion), suggestion)
-               for original, suggestion in list]
+               for original, suggestion in my_list]
         if out[0][0] > out[1][0]:
             return out[0][1]
         else:
@@ -122,11 +124,11 @@ def spellcheck(last_line, ending_char):
         return res
 
     if last_line == '':
-        return
+        return None
 
     lang = find_language(last_line)
     if lang == 'el' or detect_current_language() == 'el':
-        return
+        return None
 
     common = {'toy': 'του', 'den': 'δεν',
               'myo': 'μου', 'alla': 'αλλα', 'ta': 'τα', 'soy': 'σου', 'ti': 'τι'}
@@ -134,19 +136,16 @@ def spellcheck(last_line, ending_char):
     if last_line in common:
         suggestion = common[last_line]
         language_of_previous_word = find_language(suggestion)
-        execute_replacement(last_line, suggestion, ending_char=ending_char)
-        return
+        return suggestion
     if last_line in common_ambiguity and language_of_previous_word == 'el':
         suggestion = common_ambiguity[last_line]
         language_of_previous_word = find_language(suggestion)
-        execute_replacement(last_line, suggestion, ending_char=ending_char)
-        return
+        return suggestion
 
     isCorrect = en.spell(last_line)
     if isCorrect:
         language_of_previous_word = 'en'
-        # print('is correct in english')
-        return
+        return None
     if (not isCorrect) and validate_word(last_line):
         suggestions_en = [word for word in en.suggest(last_line) 
             if word in freq_en and similar(last_line, word)]
@@ -158,7 +157,7 @@ def spellcheck(last_line, ending_char):
                 greek(last_line)) if similar(greek(last_line), word)]
         if len(suggestions_en) == 0 and len(suggestions_el) == 0:
             print('no suggestions for', last_line)
-            return
+            return None
         elif len(suggestions_en) > 0 and len(suggestions_el) == 0:
             suggestion = suggestions_en[0]
         elif len(suggestions_en) == 0 and len(suggestions_el) > 0:
@@ -171,28 +170,17 @@ def spellcheck(last_line, ending_char):
 
         
         language_of_previous_word = find_language(suggestion)
-        execute_replacement(last_line, suggestion, ending_char=ending_char)
+        return suggestion
 
-def keys_from_chars(string: str):
+def keys_from_chars(string: str) -> list:
     return [keyboard.KeyCode.from_char(char) for char in string]
 
 def on_press(key):
-    global deafen_listener
-    if deafen_listener:
-        print('deafen listener True')
-    else:
-        # detect_current_language()
+    if key in [keyboard.Key.space, *keys_from_chars('.,)-:!"]')]:
+        ...
+        cancel = False
+        current_word = ''
         
-        if key in [keyboard.Key.space, *keys_from_chars('.,)-:!"]')]:
-            ...
-            cancel = False
-            current_word = ''
-        
-
-def on_click(x, y, button, pressed):
-    global cancel, current_word
-    cancel = True
-    current_word = ''
 
 from dataclasses import dataclass
 @dataclass
@@ -206,27 +194,32 @@ from rx import operators as ops
 
 class Manager:
 
+    def __init__(self):
+        self.subject = Subject()
+        self.input_stream = self.subject.subscribe()
+        self.active = True
+
     def on_click(self, x, y, button, pressed):
         if pressed:
             self.subject.on_next(InputEvent(device='mouse')) # send message to the subscribers
 
     def on_press(self, key):
-        self.subject.on_next(InputEvent(device='keyboard', key=key))
+        if self.active:
+            self.subject.on_next(InputEvent(device='keyboard', key=key))
         if key == keyboard.Key.esc:
             self.subject.on_completed()
             raise SystemExit
 
-    def open(self):
-        self.subject = Subject()
-        self.input_stream = self.subject.subscribe()
 
 if __name__ == '__main__':
     try:
         manager = Manager() 
-        manager.open()
 
 
         def calc_cancel(previous_event, event):
+            if event.device == 'mouse':
+                return True
+
             if event.key in [keyboard.Key.enter, keyboard.Key.tab]:
                 return False
             if event.key in [keyboard.Key.backspace]:
@@ -249,7 +242,7 @@ if __name__ == '__main__':
             print(f'keep_current_word with {previous_word}, {t}')
             event, cancel = t
             if event.device == 'mouse':
-                return previous_word
+                return ''
 
             if cancel == False:
                 if is_letter(event.key):
@@ -266,7 +259,6 @@ if __name__ == '__main__':
             return previous_word # nothing of the above
         current_word = manager.subject.pipe(
             ops.zip(cancel),
-            ops.do_action(lambda tup: print('int:', tup)),
             ops.scan(keep_current_word, ''),
             ops.do_action(lambda current_word: print(f'word: "{current_word}"'))
         )
@@ -277,10 +269,14 @@ if __name__ == '__main__':
         cancel.subscribe()
 
 
-        def wrap_spellcheck(event: InputEvent, current_word: str):
+        def wrap_spellcheck(event: InputEvent, current_word_value: str):
             start = time()
-            # spellcheck(current_word, ending_char=event.key)
-            print('time to spellcheck:', str(time() - start))
+            suggestion = spellcheck(current_word_value)
+            print(f'time to compute: {time() - start}')
+            start = time()
+            if suggestion is not None:
+                execute_replacement(current_word_value, suggestion, ending_char=event.key)
+            print(f'time to replace: {time() - start}')
 
         spellcheck_event = manager.subject.pipe(
             ops.filter(lambda event: event.key in [keyboard.Key.space, *keys_from_chars('.,)-:!"]')]),
@@ -289,15 +285,13 @@ if __name__ == '__main__':
         ).subscribe(lambda tup: wrap_spellcheck(*tup))
 
 
-        # deafen_listener να σεταρίζεται στο execute_replacement
-        manager.subject.pipe(
-
-        )
+        
 
         mouse_listener = mouse.Listener(on_click=lambda x, y, button, pressed: manager.on_click(x, y, button, pressed))
         mouse_listener.start()
         with keyboard.Listener(on_press=lambda key: manager.on_press(key)) as listener:
             try:
+                print('listener ready')
                 listener.join()
             except KeyError as err: 
                 print('error', err)   
@@ -321,3 +315,4 @@ if __name__ == '__main__':
 # @TODO να σου αλλάζει και την γλώσσα όταν κάνεις transliteration
 # @TODO mute listener όταν κάνω push ένα suggestion
 # ops.replay(buffer_size=1) # persist the last value
+# use detect_current_language()
