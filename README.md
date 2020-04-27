@@ -23,20 +23,10 @@ Autocorrect for your PC with Python, for optimizing writing speed and using less
 
 # How to use it
 
-- Clone the project
-- Install dependencies
-
-```
-pip install cyhunspell
-pip install pynput
-```
-
-- Run `script.py`
-
-```
-python3 script.py
-```
-
+- Clone the project `git clone https://github.com/panoschal/Auto-Correct-Greeklish.git`
+- If on linux, run `sudo apt-get install libhunspell-1.6-0 libhunspell-dev`
+- Install dependencies `pip3 install -r requirements.txt`
+- Run the program `python3 script.py`
 - Press Escape to stop it
 
 Το πιθανότερο είναι να δουλεύει σε όλα τα OS.

@@ -45,14 +45,7 @@ def is_letter(key):
 
 
 def execute_replacement(last_line, suggestion, ending_char):
-    global cancel, manager
     print(last_line + '->' + suggestion)
-
-    if cancel:
-        print('cancel key pressed, I wont replace it')
-        return
-
-    manager.active = False
     # controller.press(keyboard.Key.left)
     # controller.release(keyboard.Key.left)
     # controller.press(keyboard.Key.ctrl)
@@ -66,7 +59,6 @@ def execute_replacement(last_line, suggestion, ending_char):
     controller.type(suggestion)
     controller.press(ending_char)
     controller.release(ending_char)
-    manager.active = True
 
 
 def greek(word: str):
@@ -87,9 +79,6 @@ def greek(word: str):
             gr_stress = gr_stress + gr[i]
 
     return gr_stress
-
-# @TODO ignore my workflowy words
-# @TODO some key combinations
 
 
 def spellcheck(last_line):
@@ -175,12 +164,6 @@ def spellcheck(last_line):
 def keys_from_chars(string: str) -> list:
     return [keyboard.KeyCode.from_char(char) for char in string]
 
-def on_press(key):
-    if key in [keyboard.Key.space, *keys_from_chars('.,)-:!"]')]:
-        ...
-        cancel = False
-        current_word = ''
-        
 
 from dataclasses import dataclass
 @dataclass
@@ -188,15 +171,24 @@ class InputEvent:
     device: str
     key: keyboard.Key = None
 
+@dataclass
+class CompletionEvent:
+    cancel: bool
+    current_word: str
+    ending_char_correct: bool
+    ending_char: keyboard.Key
+
 import rx
 from rx.subject import Subject
 from rx import operators as ops
+import functools
+import itertools
+import collections
 
 class Manager:
 
     def __init__(self):
         self.subject = Subject()
-        self.input_stream = self.subject.subscribe()
         self.active = True
 
     def on_click(self, x, y, button, pressed):
@@ -204,6 +196,7 @@ class Manager:
             self.subject.on_next(InputEvent(device='mouse')) # send message to the subscribers
 
     def on_press(self, key):
+        print('im here', self.active)
         if self.active:
             self.subject.on_next(InputEvent(device='keyboard', key=key))
         if key == keyboard.Key.esc:
@@ -214,7 +207,6 @@ class Manager:
 if __name__ == '__main__':
     try:
         manager = Manager() 
-
 
         def calc_cancel(previous_event, event):
             if event.device == 'mouse':
@@ -232,21 +224,18 @@ if __name__ == '__main__':
 
             return False # base case
 
-        cancel = manager.subject.pipe(
-            ops.pairwise(),
-            ops.map(lambda pair_of_events: calc_cancel(*pair_of_events)),
-            ops.start_with(False)
-        )
         
-        def keep_current_word(previous_word: str, t: tuple):
-            print(f'keep_current_word with {previous_word}, {t}')
-            event, cancel = t
+        def keep_current_word(previous_word: str, t):
+            # print(f'keep_current_word with {previous_word}, {t}')
+            previous_event, event = t
+            if previous_event.key in [keyboard.Key.space, *keys_from_chars('.,)-:!"]')]:
+                return str(event.key)[1]
+
             if event.device == 'mouse':
                 return ''
 
-            if cancel == False:
-                if is_letter(event.key):
-                    return previous_word + str(event.key)[1]
+            if is_letter(event.key):
+                return previous_word + str(event.key)[1]
 
             if event.key in [keyboard.Key.enter, keyboard.Key.tab, keyboard.Key.left, keyboard.Key.right, keyboard.Key.up, keyboard.Key.down, *keys_from_chars('@#')]:
                 return ''
@@ -257,32 +246,52 @@ if __name__ == '__main__':
                     return previous_word[:-1]
             
             return previous_word # nothing of the above
-        current_word = manager.subject.pipe(
-            ops.zip(cancel),
-            ops.scan(keep_current_word, ''),
-            ops.do_action(lambda current_word: print(f'word: "{current_word}"'))
-        )
-    
-    
- 
-        current_word.subscribe()
-        cancel.subscribe()
 
-
-        def wrap_spellcheck(event: InputEvent, current_word_value: str):
+        def wrap_spellcheck(current_word_value: str):
+            # print(f'wrap_spellcheck with {current_word_value} and {ending_char}')
             start = time()
             suggestion = spellcheck(current_word_value)
             print(f'time to compute: {time() - start}')
+            return rx.of(suggestion) # @TODO
+
+        def wrap_replacement(current_word_value, suggestion, ending_char):
             start = time()
             if suggestion is not None:
-                execute_replacement(current_word_value, suggestion, ending_char=event.key)
+                execute_replacement(current_word_value, suggestion, ending_char=ending_char)
             print(f'time to replace: {time() - start}')
 
-        spellcheck_event = manager.subject.pipe(
-            ops.filter(lambda event: event.key in [keyboard.Key.space, *keys_from_chars('.,)-:!"]')]),
-            ops.with_latest_from(current_word)
-            # ops.map(lambda event: (event.key, ))
-        ).subscribe(lambda tup: wrap_spellcheck(*tup))
+        def should_cancel_replacement(previous_should_cancel_replacement, array_of_events):
+            if not previous_should_cancel_replacement:
+                return False # cancellation expires after one time
+            return functools.reduce(calc_cancel, array_of_events)
+
+        cancel = manager.subject.pipe(
+            ops.scan(lambda acc, event: [*acc, event], []),
+            ops.scan(should_cancel_replacement, False)
+        )
+        ending_char_correct = manager.subject.pipe(
+            ops.map(lambda event: event.key in [keyboard.Key.space, *keys_from_chars('.,)-:!"]')]),
+        )
+        ending_char = manager.subject.pipe(
+            ops.map(lambda event: event.key),
+        )
+        current_word = manager.subject.pipe(
+            ops.pairwise(),
+            ops.scan(keep_current_word, ''),
+            ops.start_with(''), # για να έχει ίδια emissions λόγω του pairwise
+        )
+
+
+        spellcheck_event = rx.zip(cancel, current_word, ending_char_correct, ending_char).pipe(
+            ops.map(lambda tup: CompletionEvent(cancel=tup[0], current_word=tup[1], ending_char=tup[3], ending_char_correct=tup[2])),
+            ops.do_action(lambda ev: print(ev)),
+            ops.filter(lambda ev: not ev.cancel),
+            ops.filter(lambda ev: ev.ending_char_correct),
+        )
+        
+        spellcheck_event.pipe(
+            ops.switch_map(lambda ev: wrap_spellcheck(ev.current_word)),
+        )
 
 
         
@@ -302,17 +311,22 @@ if __name__ == '__main__':
         print(e)
 
 # @TODO add names, maybe from fb
-# @TODO στην αρχή του listener πρέπει να είσαι στα αγγλικά
-# @TODO να κάνει σωστά τα κεφαλαία-μικρά
+# @TODO ignore my workflowy words
+
 # @TODO να κάνει και πολλές λέξεις μαζί. πχ καιαυτό -> και αυτό. κα ιαυτό -> και αυτό.
 # @TODO να βελτιώσω την ταχύτητα. να ακυρώνεται η διόρθωση αν προλάβεις να αρχίσεις την επόμενη λέξη. ή να διορθώνονται πολλές λέξεις μαζί.
-# @TODO greek by frequency, sort, or by similarity
+# @TODO όταν περν΄΄αει αρκετή ΄΄ωρα, να ακυρ΄΄ωνεται.
 # @TODO πιο γρήγορο
+
+# @TODO να κάνει σωστά τα κεφαλαία-μικρά
+# @TODO στην αρχή του listener πρέπει να είσαι στα αγγλικά
+# @TODO greek by frequency, sort, or by similarity
 # @TODO να βάζει την τελεία πριν το κεν΄΄ο
 # @TODO shortcut για να εισάγεις λέξη στο λεξικό.
-# @TODO όταν περν΄΄αει αρκετή ΄΄ωρα, να ακυρ΄΄ωνεται.
 # @TODO ctrl+backspace bug
 # @TODO να σου αλλάζει και την γλώσσα όταν κάνεις transliteration
 # @TODO mute listener όταν κάνω push ένα suggestion
 # ops.replay(buffer_size=1) # persist the last value
 # use detect_current_language()
+
+# @TODO some key combinations
