@@ -198,7 +198,7 @@ class Manager:
     def on_press(self, key):
         print('im here', self.active)
         if self.active:
-            self.subject.on_next(InputEvent(device='keyboard', key=key))
+            self.subject.on_next(InputEvent(device='keyboard', key=key)) # send message to the subscribers
         if key == keyboard.Key.esc:
             self.subject.on_completed()
             raise SystemExit
@@ -209,6 +209,7 @@ if __name__ == '__main__':
         manager = Manager() 
 
         def calc_cancel(previous_event, event):
+            '''function that specifies whether replacement should be canceled, depending on end key'''
             if event.device == 'mouse':
                 return True
 
@@ -228,17 +229,25 @@ if __name__ == '__main__':
         def keep_current_word(previous_word: str, t):
             # print(f'keep_current_word with {previous_word}, {t}')
             previous_event, event = t
-            if previous_event.key in [keyboard.Key.space, *keys_from_chars('.,)-:!"]')]:
-                return str(event.key)[1]
 
+            # first, the definite exceptions
             if event.device == 'mouse':
                 return ''
+            if event.key in [keyboard.Key.enter, keyboard.Key.tab, keyboard.Key.left, keyboard.Key.right, keyboard.Key.up, keyboard.Key.down, *keys_from_chars('@#')]:
+                return ''
 
+            # if you press DOT and SPACE, current_word is reset
+            # if you press DOT and A, current_word is starting from A
+            if previous_event.key in [keyboard.Key.space, *keys_from_chars('.,)-:!"]')]:
+                if is_letter(event.key):
+                    return str(event.key)[1]
+                else:
+                    return ''
+
+            # in the middle of the sentence, if you press a letter, it gets appended
             if is_letter(event.key):
                 return previous_word + str(event.key)[1]
 
-            if event.key in [keyboard.Key.enter, keyboard.Key.tab, keyboard.Key.left, keyboard.Key.right, keyboard.Key.up, keyboard.Key.down, *keys_from_chars('@#')]:
-                return ''
             if event.key in [keyboard.Key.backspace]:
                 if previous_word == '': # πριν, πάτησα κενό, οπότε ακυρώνω για να γράψει ο χρήστης ότι θέλει
                     return ''
@@ -251,10 +260,11 @@ if __name__ == '__main__':
             # print(f'wrap_spellcheck with {current_word_value} and {ending_char}')
             start = time()
             suggestion = spellcheck(current_word_value)
-            print(f'time to compute: {time() - start}')
-            return rx.of(suggestion) # @TODO
+            print(f'time to compute: {time() - start:.2f}s', 'suggestion is', suggestion)
+            return rx.of(suggestion) # @TODO να είναι κάτι που να μπορεί να πάρει πολλή ώρα
 
         def wrap_replacement(current_word_value, suggestion, ending_char):
+            print('starting replacement')
             start = time()
             if suggestion is not None:
                 execute_replacement(current_word_value, suggestion, ending_char=ending_char)
@@ -265,6 +275,7 @@ if __name__ == '__main__':
                 return False # cancellation expires after one time
             return functools.reduce(calc_cancel, array_of_events)
 
+        # cancel is an observable that emits True when the replacement should be canceled
         cancel = manager.subject.pipe(
             ops.scan(lambda acc, event: [*acc, event], []),
             ops.scan(should_cancel_replacement, False)
@@ -278,20 +289,30 @@ if __name__ == '__main__':
         current_word = manager.subject.pipe(
             ops.pairwise(),
             ops.scan(keep_current_word, ''),
-            ops.start_with(''), # για να έχει ίδια emissions λόγω του pairwise
+            ops.start_with(''), # για να έχει ίδια emissions λόγω του pairwise, ώστε να είναι aligned στο zip
         )
 
 
-        spellcheck_event = rx.zip(cancel, current_word, ending_char_correct, ending_char).pipe(
+        # completion_event is an observable that emits a CompletionEvent when a word is finished, an ending char is pressed
+        completion_event = rx.zip(cancel, current_word, ending_char_correct, ending_char).pipe(
             ops.map(lambda tup: CompletionEvent(cancel=tup[0], current_word=tup[1], ending_char=tup[3], ending_char_correct=tup[2])),
-            ops.do_action(lambda ev: print(ev)),
             ops.filter(lambda ev: not ev.cancel),
             ops.filter(lambda ev: ev.ending_char_correct),
+            ops.do_action(lambda ev: print(ev)),
+        )
+        completion_event.subscribe()
+
+        spellcheck_result = completion_event.pipe(
+            ops.map(lambda ev: wrap_spellcheck(ev.current_word)),
+            ops.switch_latest(),
         )
         
-        spellcheck_event.pipe(
-            ops.switch_map(lambda ev: wrap_spellcheck(ev.current_word)),
+        replacement = rx.zip(completion_event, spellcheck_result).pipe(
+            ops.do_action(lambda a: wrap_replacement(a[0].current_word_value, a[1], a[0].ending_char))
         )
+        
+        
+        # replacement.subscribe(on_next = lambda: print('replacement done'))
 
 
         
